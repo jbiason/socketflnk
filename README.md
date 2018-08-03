@@ -48,43 +48,12 @@ The list of event types is:
 
 ### An example run
 
-| Input       | Output | Explanation |
-| ----------- | ------ | ----------- |
-| `1 window1` | `CREATE                    - window1 at 1s seen 1 times`<br>`WATERMARK                 - moved to -9 ` | You entered `1 window1`; this means "Hey SocketFlink, at the second 1, the word 'window1' appears"; SocketFlink will, then, create the word `window1` and, because it is the most recent event, will move the watermark (it's 10 second past the most recent event, so second 1 minus 10 seconds equals second -9) |
-
-2 window1
-2 window1
-20 window1
-29 window1
-31 window2
-45 window2
-21 window1
-
-
-## Output
-
-CREATE                    - window1 at 2s seen 1 times
-WATERMARK                 - moved to -8
-REDUCE                    - window1 at 1s seen 1 times + window1 at 2s seen 1 times, now window1 at 1s seen 2 times
-CREATE                    - window1 at 2s seen 1 times
-REDUCE                    - window1 at 1s seen 2 times + window1 at 2s seen 1 times, now window1 at 1s seen 3 times
-CREATE                    - window1 at 20s seen 1 times
-WATERMARK                 - moved to 10
-REDUCE                    - window1 at 1s seen 3 times + window1 at 20s seen 1 times, now window1 at 1s seen 4 times
-CREATE                    - window1 at 29s seen 1 times
-WATERMARK                 - moved to 19
-REDUCE                    - window1 at 1s seen 4 times + window1 at 29s seen 1 times, now window1 at 1s seen 5 times
-CREATE                    - window2 at 31s seen 1 times
-WATERMARK                 - moved to 21
-CREATE                    - window2 at 45s seen 1 times
-WATERMARK                 - moved to 35
-REDUCE                    - window2 at 31s seen 1 times + window2 at 45s seen 1 times, now window2 at 31s seen 2 times
-FIRING                    - window1 at 1s seen 5 times to 0, now window1 at 0s seen 5 times
-SINK                      - window1 at 0s seen 5 times
-CREATE                    - window1 at 21s seen 1 times
-REDUCE                    - window1 at 1s seen 5 times + window1 at 21s seen 1 times, now window1 at 1s seen 6 times
-FIRING                    - window1 at 1s seen 6 times to 0, now window1 at 0s seen 6 times
-SINK                      - window1 at 0s seen 6 times
-FIRING                    - window2 at 31s seen 2 times to 30, now window2 at 30s seen 2 times
-SINK                      - window2 at 30s seen 2 times
-
+| Input        | Output | Explanation |
+| ------------ | ------ | ----------- |
+| `1 window1`  | `CREATE - window1 at 1s seen 1 times`<br>`WATERMARK - moved to -9 ` | You entered `1 window1`; this means "Hey SocketFlink, at the second 1, the word 'window1' appears"; SocketFlink will, then, create the word `window1` and, because it is the most recent event, will move the watermark (it's 10 second past the most recent event, so second 1 minus 10 seconds equals second -9) |
+| `2 window1`  | `CREATE - window1 at 2s seen 1 times`<br>`WATERMARK - moved to -8`<br>`REDUCE - window1 at 1s seen 1 times + window1 at 2s seen 1 times, now window1 at 1s seen 2 times` | The input `2 window1` means that, the second 2, `window1` appeared again. The process of creating the event and moving the watermark happen again (because 2 is more recent than 1). This time, though, `window1` was already in the window, so Flink will produce a single element instead of keeping both `window1` events. |
+| `2 window1`  | `CREATE - window1 at 2s seen 1 times`<br>`REDUCE - window1 at 1s seen 2 times + window1 at 2s seen 1 times, now window1 at 1s seen 3 times` | Exactly like before, but this time there was no need to move the watermark (because 2 is not more recent than 2) |
+| `20 window1` | `CREATE - window1 at 20s seen 1 times`<br>`WATERMARK - moved to 10`<br>`REDUCE - window1 at 1s seen 3 times + window1 at 20s seen 1 times, now window1 at 1s seen 4 times` | No magic here, same as before; the thing to note, though, is that the watermark was moved to the second 10, which puts the previous element before it but there is no firing and sinking. |
+| `29 window1` | `CREATE - window1 at 29s seen 1 times`<br>`WATERMARK - moved to 19`<br>`REDUCE - window1 at 1s seen 4 times + window1 at 29s seen 1 times, now window1 at 1s seen 5 times` | Again, no magic. The only thing of note here is that, because our windows are 30 seconds long, this is the last position possible inside the window. |
+| `31 window2` | `CREATE - window2 at 31s seen 1 times`<br>`WATERMARK - moved to 21` | No grouping at all: we moved out of the first window AND created a new element (if this was `window1` instead of `2`, there would still be no reduce in action here).|
+| `45 window2` | `CREATE - window2 at 45s seen 1 times`<br>`WATERMARK - moved to 35`<br>`REDUCE - window2 at 31s seen 1 times + window2 at 45s seen 1 times, now window2 at 31s seen 2 times`<br>`FIRING - window1 at 1s seen 5 times to 0, now window1 at 0s seen 5 times`<br>`SINK - window1 at 0s seen 5 times` | Lots going on here: First, when the element is created, it moves the watermark to beyond the start of the previous window. So now the elements in the first window need to be fired and they reach the sink. This is the important part here: the watermark only affects with WINDOWS, not individual elements. |
