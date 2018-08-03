@@ -1,18 +1,57 @@
 # An example of Flink Windows and Watermarks
 
-TODO
+This is a simple example of how Flink deals with Windows and Watermarks. The
+magic trick here is that there isn't anything programmed to run, you'll have to
+input all elements by yourself -- and then you'll see what happens.
 
 ## Running
 
-One window: `nc -l 60000`
+For this, you'll need two terminal windows: One for your input and another to
+see the result of Flink.
 
-Other window: `sbt "run --hostname 127.0.0.1 --port 60000"`
+On the "input" window, run  `nc -l 60000`; this will start
+[NetCat](http://netcat.sourceforge.net/) on port 60000 on your machine.
 
-## Input
+On the "output" window, run `sbt "run --hostname 127.0.0.1 --port 60000"`; this
+will compile the project and start Flink minicluster.
 
-_TODO_: EXPLAIN THIS
+You can pick any port you want, as long as you run both commands with the same
+value.
 
-1 window1
+### Event Types
+
+SocketFlink will output (on the "output" window) some internal events. You can
+get more information about those by reading the source code; each event type is
+based on a Flink function (an operation done in the pipeline) and before each
+function there is a deeper explanation on what the function does.
+
+The list of event types is:
+
+<dl>
+	<dt>CREATE</dt>
+	<dd>SocketFlink interpreted the value you entered and created an event to be processed.</dd>
+
+	<dt>WATERMARK</dt>
+	<dd>The just created event forced the watermark to be moved. In this example, the watermark
+	will move every time it sees an event that is most recent than any preivous one.</dd>
+
+	<dt>REDUCE</dt>
+	<dd>SocketFlink will group duplicated words in a single element. When this happens, a
+	REDUCE event will appear.</dd>
+
+	<dt>FIRING</dt>
+	<dd>Flink decided it was time for the event to be expelled from a window.</dd>
+
+	<dt>SINK</dt>
+	<dd>The fired element in the previous event type reached the sink.</dd>
+</dl>
+
+### An example run
+
+| Input       | Output | Explanation |
+| ----------- | ------ | ----------- |
+| `1 window1` | `CREATE                    - window1 at 1s seen 1 times`<br>`WATERMARK                 - moved to -9 ` | You entered `1 window1`; this means "Hey SocketFlink, at the second 1, the word 'window1' appears"; SocketFlink will, then, create the word `window1` and, because it is the most recent event, will move the watermark (it's 10 second past the most recent event, so second 1 minus 10 seconds equals second -9) |
+
 2 window1
 2 window1
 20 window1
@@ -24,8 +63,6 @@ _TODO_: EXPLAIN THIS
 
 ## Output
 
-CREATE                    - window1 at 1s seen 1 times
-WATERMARK                 - moved to -9
 CREATE                    - window1 at 2s seen 1 times
 WATERMARK                 - moved to -8
 REDUCE                    - window1 at 1s seen 1 times + window1 at 2s seen 1 times, now window1 at 1s seen 2 times
