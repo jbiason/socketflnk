@@ -102,7 +102,7 @@ public class SocketWindowWordCount {
 					if (extractedTimestamp > currentMaxTimestamp) {
 						currentMaxTimestamp = extractedTimestamp;
 						watermarkTime = currentMaxTimestamp - Time.seconds(10).toMilliseconds();
-						displayStep("TIMESTAMP", "moved to " + (watermarkTime / 1000));
+						displayStep("WATERMARK", "moved to " + (watermarkTime / 1000));
 						result = new Watermark(watermarkTime);
 					}
 					return result;
@@ -167,7 +167,7 @@ public class SocketWindowWordCount {
 								WordEvent result = new WordEvent(window.getStart(),
 											word.getWord(),
 											word.getCount());
-								displayStep("MOVE", word + " to " + (window.getStart() / 1000) + ", now " + result);
+								displayStep("FIRING", word + " to " + (window.getStart() / 1000) + ", now " + result);
 								out.collect(result);
 							}
 						}
