@@ -33,7 +33,7 @@ The list of event types is:
 
 	<dt>WATERMARK</dt>
 	<dd>The just created event forced the watermark to be moved. In this example, the watermark
-	will move every time it sees an event that is most recent than any preivous one.</dd>
+	will move every time it sees an event that is most recent than any previous one.</dd>
 
 	<dt>REDUCE</dt>
 	<dd>SocketFlink will group duplicated words in a single element. When this happens, a
@@ -57,3 +57,9 @@ The list of event types is:
 | `29 window1` | `CREATE - window1 at 29s seen 1 times`<br>`WATERMARK - moved to 19`<br>`REDUCE - window1 at 1s seen 4 times + window1 at 29s seen 1 times, now window1 at 1s seen 5 times` | Again, no magic. The only thing of note here is that, because our windows are 30 seconds long, this is the last position possible inside the window. |
 | `31 window2` | `CREATE - window2 at 31s seen 1 times`<br>`WATERMARK - moved to 21` | No grouping at all: we moved out of the first window AND created a new element (if this was `window1` instead of `2`, there would still be no reduce in action here).|
 | `45 window2` | `CREATE - window2 at 45s seen 1 times`<br>`WATERMARK - moved to 35`<br>`REDUCE - window2 at 31s seen 1 times + window2 at 45s seen 1 times, now window2 at 31s seen 2 times`<br>`FIRING - window1 at 1s seen 5 times to 0, now window1 at 0s seen 5 times`<br>`SINK - window1 at 0s seen 5 times` | Lots going on here: First, when the element is created, it moves the watermark to beyond the start of the previous window. So now the elements in the first window need to be fired and they reach the sink. This is the important part here: the watermark only affects with WINDOWS, not individual elements. |
+
+## License
+
+There is no license for this code. Use it at your own risk. If it breaks, it's
+your own fault and your own responsability to put it back together. Not
+suitable for children. Continuous use may cause blindness.
